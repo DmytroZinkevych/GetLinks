@@ -1,6 +1,7 @@
 # Java
 *.class
 *.jar
+out/
 
 # Maven
 log/

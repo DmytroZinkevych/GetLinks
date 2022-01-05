@@ -11,7 +11,7 @@ public class GetLinks {
         final String URL_LINE_START = "URL=";
         final String DIRECTORY = "./";
         try (
-                Stream<Path> stream = Files.list(Paths.get(DIRECTORY));
+                Stream<Path> stream = Files.list(Paths.get(DIRECTORY))
         ) {
             String links = stream
                     .filter(filePath -> !Files.isDirectory(filePath)
@@ -21,10 +21,14 @@ public class GetLinks {
                             String fileContent = Files.readString(filePath);
                             int urlStartIndex = fileContent.lastIndexOf(URL_LINE_START);
                             if (fileContent.contains("[InternetShortcut]") && urlStartIndex >= 0) {
+                                fileContent = fileContent.substring(urlStartIndex + URL_LINE_START.length());
+                                int lineEndIndex = fileContent.indexOf("\n");
+                                if (lineEndIndex > -1)
+                                    fileContent = fileContent.substring(0, lineEndIndex).stripTrailing();
                                 String fileName = filePath.getFileName().toString();
                                 return fileName.substring(0, fileName.length() - FILE_EXTENSION.length())
                                         + "\n"
-                                        + fileContent.substring(urlStartIndex + URL_LINE_START.length()).stripTrailing();
+                                        + fileContent.stripTrailing();
                             }
                         } catch (IOException e) {
                             e.printStackTrace();
