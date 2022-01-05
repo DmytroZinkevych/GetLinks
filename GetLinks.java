@@ -8,8 +8,8 @@ import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class GetLinks {
     private static final String DIRECTORY = "./";
@@ -17,29 +17,33 @@ public class GetLinks {
     private static final String LINE_ENDING = "\n";
     private static final String EMPTY_STRING = "";
 
-    public static void main(String[] args) throws IOException {
-        String links = Files.list(Paths.get(DIRECTORY))
-                .filter(filePath -> !Files.isDirectory(filePath)
-                        && (isUrlFile(filePath) || isWeblocFile(filePath))
-                )
-                .map(filePath -> {
-                    String content = getFileName(filePath);
-                    int dotLastIndex = content.lastIndexOf('.');
-                    if (dotLastIndex > 0)
-                        content = content.substring(0, dotLastIndex).stripTrailing();
-                    content = content.replace('\u00a0',' ') + LINE_ENDING;
-                    if (isUrlFile(filePath)) {
-                        content += extractLinkFromUrlFile(filePath);
-                    } else if (isWeblocFile(filePath)) {
-                        content += extractLinkFromWeblocFile(filePath);
-                    }
-                    return content;
-                })
-                .collect(Collectors.joining(LINE_ENDING.repeat(2)));
-        Files.writeString(
-                Files.createFile(Paths.get(DIRECTORY + LINKS_FILE_NAME)),
-                links
-        );
+    public static void main(String[] args) {
+        try (Stream<Path> stream = Files.list(Path.of(DIRECTORY))) {
+            String links = stream
+                    .filter(filePath -> !Files.isDirectory(filePath)
+                            && (isUrlFile(filePath) || isWeblocFile(filePath))
+                    )
+                    .map(filePath -> {
+                        String text = getFileName(filePath);
+                        int dotLastIndex = text.lastIndexOf('.');
+                        if (dotLastIndex > 0)
+                            text = text.substring(0, dotLastIndex).stripTrailing();
+                        text = text.replace('\u00a0', ' ') + LINE_ENDING;
+                        if (isUrlFile(filePath)) {
+                            text += extractLinkFromUrlFile(filePath);
+                        } else if (isWeblocFile(filePath)) {
+                            text += extractLinkFromWeblocFile(filePath);
+                        }
+                        return text;
+                    })
+                    .collect(Collectors.joining(LINE_ENDING.repeat(2)));
+            Files.writeString(
+                    Files.createFile(Path.of(DIRECTORY + LINKS_FILE_NAME)),
+                    links
+            );
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         System.out.println("Links saved successfully :)");
     }
 
