@@ -1,4 +1,11 @@
-import java.io.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -17,15 +24,21 @@ public class GetLinks {
                 Stream<Path> stream = Files.list(Paths.get(DIRECTORY))
         ) {
             String links = stream
-                    .filter(filePath -> !Files.isDirectory(filePath) && isUrlFile(filePath))
+                    .filter(filePath -> !Files.isDirectory(filePath)
+                            && (isUrlFile(filePath) || isWeblocFile(filePath))
+                    )
                     .map(filePath -> {
-                        String fileName = getFileName(filePath);
-                        int dotLastIndex = fileName.lastIndexOf('.');
+                        String content = getFileName(filePath);
+                        int dotLastIndex = content.lastIndexOf('.');
                         if (dotLastIndex > 0)
-                            fileName = fileName.substring(0, dotLastIndex).stripTrailing();
-                        return fileName.replace('\u00a0',' ')
-                                + LINE_ENDING
-                                + extractLinkFromUrlFile(filePath);
+                            content = content.substring(0, dotLastIndex).stripTrailing();
+                        content = content.replace('\u00a0',' ') + LINE_ENDING;
+                        if (isUrlFile(filePath)) {
+                            content += extractLinkFromUrlFile(filePath);
+                        } else if (isWeblocFile(filePath)) {
+                            content += extractLinkFromWeblocFile(filePath);
+                        }
+                        return content;
                     })
                     .collect(Collectors.joining(LINE_ENDING.repeat(2)));
             Files.writeString(
@@ -40,6 +53,10 @@ public class GetLinks {
 
     private static boolean isUrlFile(Path filePath) {
         return getFileName(filePath).toLowerCase().endsWith(".url");
+    }
+
+    private static boolean isWeblocFile(Path filePath) {
+        return getFileName(filePath).toLowerCase().endsWith(".webloc");
     }
 
     private static String getFileName(Path filePath) {
@@ -59,6 +76,23 @@ public class GetLinks {
                 return fileContent.stripTrailing();
             }
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return EMPTY_STRING;
+    }
+
+    private static String extractLinkFromWeblocFile(Path filePath) {
+        try {
+            Document document = DocumentBuilderFactory.newInstance()
+                    .newDocumentBuilder()
+                    .parse(filePath.toFile());
+            XPathExpression expr = XPathFactory.newInstance()
+                    .newXPath()
+                    .compile("/plist/dict[key='URL']/string");
+            Node node = (Node) expr.evaluate(document, XPathConstants.NODE);
+            if (node != null)
+                return node.getTextContent();
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return EMPTY_STRING;
