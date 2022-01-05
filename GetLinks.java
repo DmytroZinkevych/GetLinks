@@ -72,7 +72,7 @@ public class GetLinks {
                 return fileContent.stripTrailing();
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            printFileError(filePath, e);
         }
         return EMPTY_STRING;
     }
@@ -89,8 +89,13 @@ public class GetLinks {
             if (node != null)
                 return node.getTextContent();
         } catch (Exception e) {
-            e.printStackTrace();
+            printFileError(filePath, e);
         }
         return EMPTY_STRING;
+    }
+
+    private static void printFileError(Path filePath, Exception e) {
+        System.err.println("Error while reading the file \"" + getFileName(filePath) + "\"");
+        e.printStackTrace();
     }
 }
