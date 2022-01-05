@@ -23,7 +23,9 @@ public class GetLinks {
                         int dotLastIndex = fileName.lastIndexOf('.');
                         if (dotLastIndex > 0)
                             fileName = fileName.substring(0, dotLastIndex).stripTrailing();
-                        return fileName + LINE_ENDING + extractLinkFromUrlFile(filePath);
+                        return fileName.replace('\u00a0',' ')
+                                + LINE_ENDING
+                                + extractLinkFromUrlFile(filePath);
                     })
                     .collect(Collectors.joining(LINE_ENDING.repeat(2)));
             Files.writeString(
