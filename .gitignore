@@ -1,13 +1,13 @@
 # Java
 *.class
 *.jar
-out/
 
 # Maven
 log/
 target/
 
 # IntelliJ IDEA
+out/
 .idea/
 *.iml
 *.iws
