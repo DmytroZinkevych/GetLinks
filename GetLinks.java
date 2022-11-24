@@ -16,8 +16,9 @@ public class GetLinks {
     private static final String LINKS_FILE_NAME = "links.txt";
     private static final String LINE_ENDING = "\n";
     private static final String EMPTY_STRING = "";
+    private static final String URL_LINE_START = "URL=";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         try (Stream<Path> stream = Files.list(Path.of(DIRECTORY))) {
             String links = stream
                     .filter(filePath -> !Files.isDirectory(filePath)
@@ -41,10 +42,8 @@ public class GetLinks {
                     Files.createFile(Path.of(DIRECTORY + LINKS_FILE_NAME)),
                     links
             );
-        } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Links saved successfully :)");
         }
-        System.out.println("Links saved successfully :)");
     }
 
     private static boolean isUrlFile(Path filePath) {
@@ -60,7 +59,6 @@ public class GetLinks {
     }
 
     private static String extractLinkFromUrlFile(Path filePath) {
-        final String URL_LINE_START = "URL=";
         try {
             String fileContent = Files.readString(filePath);
             int urlStartIndex = fileContent.lastIndexOf(URL_LINE_START);
